@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Fire Account Date Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12151c;
+    --panel: #1b202b;
+    --line: #2c3342;
+    --text: #f3eee8;
+    --muted: #8d95a5;
+    --ember: #ff6a1a;
+    --ember-dark: #d94f06;
+    --error: #ff8a7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  main { width: 100%; max-width: 440px; }
+  h1 {
+    font-family: "Rajdhani", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.2rem, 9vw, 3.2rem);
+    line-height: 1;
+    margin: 0 0 10px;
+    letter-spacing: 0.01em;
+  }
+  h1 span { color: var(--ember); }
+  .sub { color: var(--muted); margin: 0 0 28px; line-height: 1.5; }
+  label { display: block; font-weight: 500; margin-bottom: 8px; }
+  input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 1.15rem;
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--ember); outline-offset: 2px; }
+  button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px;
+    font-family: "Rajdhani", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1a0d04;
+    background: var(--ember);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:hover { background: var(--ember-dark); color: #fff; }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  #result { margin-top: 24px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ember);
+    border-radius: 6px;
+    padding: 18px 20px;
+  }
+  .card .k { color: var(--muted); font-size: 0.9rem; margin: 0 0 4px; }
+  .card .big {
+    font-family: "Rajdhani", sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+  .card .small { color: var(--muted); margin: 0; font-size: 0.9rem; }
+  .err { color: var(--error); border-left-color: var(--error); }
+  .note { margin-top: 28px; color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Free Fire <span>MAX</span><br>Account Date</h1>
+  <p class="sub">Apna ya kisi ka UID daalo aur account kab bana tha, wo date dekho.</p>
+
+  <label for="uid">Player UID</label>
+  <input id="uid" inputmode="numeric" autocomplete="off" placeholder="jaise 123456789">
+  <button id="go">Date dekho</button>
+
+  <div id="result" aria-live="polite"></div>
+
+  <p class="note">Ye ek unofficial tool hai aur Garena se juda nahi hai. Date galat ya na bhi aa sakti hai.</p>
+</main>
+
+<script>
+  const uidInput = document.getElementById("uid");
+  const btn = document.getElementById("go");
+  const out = document.getElementById("result");
+
+  function show(html) { out.innerHTML = html; }
+
+  function prettyDate(value) {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  async function check() {
+    const uid = uidInput.value.trim();
+    if (!/^\d{6,12}$/.test(uid)) {
+      show('<div class="card err"><p class="big">UID galat hai</p><p class="small">Sirf numbers daalo (6 se 12 digits).</p></div>');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Dhoondh raha hoon...";
+    show("");
+    try {
+      const res = await fetch("/api/date/" + uid);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Kuch gadbad hui.");
+
+      const r = data.result || {};
+      const raw = r.date || r.otherFormat || r.original_api_date;
+      if (!raw) throw new Error("Is UID ki date nahi mili.");
+
+      show(
+        '<div class="card"><p class="k">Account bana tha</p>' +
+        '<p class="big">' + prettyDate(raw) + '</p>' +
+        '<p class="small">UID: ' + uid + '</p></div>'
+      );
+    } catch (e) {
+      show('<div class="card err"><p class="big">Date nahi mili</p><p class="small">' + e.message + '</p></div>');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Date dekho";
+    }
+  }
+
+  btn.addEventListener("click", check);
+  uidInput.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+</script>
+</body>
+</html>

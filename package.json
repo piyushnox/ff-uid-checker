@@ -1,0 +1,13 @@
+{
+  "name": "ff-uid-checker",
+  "version": "1.0.0",
+  "description": "Free Fire MAX UID se account creation date",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "freefirejs": "latest"
+  }
+}
